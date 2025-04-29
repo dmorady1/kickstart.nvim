@@ -1,89 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -102,7 +16,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -170,6 +84,10 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open diagnostic [e]under cursor' })
+
+-- custom keymaps
+vim.keymap.set('n', '<leader>bl', '<C-^>', { noremap = true, desc = 'Last buffer' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -177,7 +95,6 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 --
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
@@ -202,6 +119,21 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
+
+-- lsp signature
+
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    local bufnr = args.buf
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if vim.tbl_contains({ 'null-ls' }, client.name) then -- blacklist lsp
+      return
+    end
+    require('lsp_signature').on_attach({
+      -- ... setup options here ...
+    }, bufnr)
+  end,
+})
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
@@ -336,9 +268,13 @@ require('lazy').setup({
 
       -- Document existing key chains
       spec = {
+        { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
+        { '<leader>d', group = '[D]ocument' },
+        { '<leader>r', group = '[R]efactor' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
-        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>h', group = '[H]arpoon' },
+        -- { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
     },
   },
@@ -399,11 +335,15 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          mappings = {
+            i = {
+              ['<c-enter>'] = 'to_fuzzy_refine',
+              ['<C-j>'] = 'move_selection_next',
+              ['<C-k>'] = 'move_selection_previous',
+            },
+          },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
@@ -421,6 +361,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sp', builtin.git_files, { desc = '[S]earch [P]roject files git' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -611,8 +552,14 @@ require('lazy').setup({
           --
           -- This may be unwanted, since they displace some of your code
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+            -- Enable inlay hints by default
+            vim.lsp.inlay_hint.enable(event.buf, true)
+
+            -- Also set up the toggle keybinding
             map('<leader>th', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+              local bufnr = event.buf
+              local is_enabled = vim.lsp.inlay_hint.is_enabled { bufnr = bufnr }
+              vim.lsp.inlay_hint.enable(bufnr, not is_enabled)
             end, '[T]oggle Inlay [H]ints')
           end
         end,
@@ -666,6 +613,96 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
+        ruff = {
+          -- on_attach = function(client, bufnr)
+          -- Disable hover in favor of Pyright
+          -- client.server_capabilities.hoverProvider = false
+          on_attach = function(client)
+            client.server_capabilities.hoverProvider = false
+          end,
+          --   -- format imports on save
+          --   vim.api.nvim_create_autocmd('BufWritePre', {
+          --     buffer = buffer,
+          --     callback = function()
+          --       vim.lsp.buf.code_action {
+          --         context = { only = { 'source.organizeImports' } },
+          --         apply = true,
+          --       }
+          --       vim.wait(100)
+          --     end,
+          --   })
+          -- end,
+        },
+        basedpyright = {
+          settings = {
+            basedpyright = {
+              analysis = {
+                -- typeCheckingMode = 'standard',
+                autoSearchPaths = true,
+                diagnosticMode = 'openFilesOnly',
+                diagnosticsMode = 'openFilesOnly', -- workspace, openFilesOnly
+                useLibraryCodeForTypes = true,
+                autoImportCompletions = true,
+                diagnosticSeverityOverrides = {
+                  -- reportUnknownMemberType = false,
+                  -- reportUnknownArgumentType = false,
+                  reportMissingSuperCall = false,
+                  -- reportUnusedClass = "warning",
+                  -- reportUnusedFunction = "warning",
+                  reportUndefinedVariable = false, -- ruff handles this with F822
+                },
+
+                inlayHints = {
+                  variableTypes = true,
+                  functionReturnTypes = true,
+                  parameterNames = 'all',
+                },
+                --     autoSearchPaths = true,
+              },
+
+              --   inlayHints = {
+              --     variableTypes = true,
+              --     functionReturnTypes = true,
+              --     parameterNames = 'all',
+              --     autoSearchPaths = true,
+              --     diagnosticMode = 'openFilesOnly',
+              --     useLibraryCodeForTypes = true,
+              --   },
+            },
+          },
+        },
+        -- pylyzer = {
+        --   settings = {
+        --     python = {
+        --       checkOnType = true,
+        --       diagnostics = true,
+        --       inlayHints = true,
+        --       smartCompletion = true,
+        --     },
+        --   },
+        -- },
+        -- pylsp = {
+        --   pylsp = {
+        --     builtin = {
+        --       -- installExtraArgs = { 'flake8', 'pycodestyle', 'pydocstyle', 'pyflakes', 'pylint', 'yapf', 'rope' },
+        --       installExtraArgs = { 'rope' },
+        --     },
+        --     plugins = {
+        --       jedi_completion = { enabled = false },
+        --       jedi_rename = { enabled = false },
+        --       rope_completion = { enabled = false },
+        --       rope_rename = { enabled = false },
+        --       pylsp_rope = { rename = true },
+        --       flake8 = { enabled = false },
+        --       pyflakes = { enabled = false },
+        --       -- pycodestyle = {
+        --       --   ignore = { 'E226', 'E266', 'E302', 'E303', 'E304', 'E305', 'E402', 'C0103', 'W0104', 'W0621', 'W391', 'W503', 'W504' },
+        --       --   maxLineLength = 99,
+        --       -- },
+        --     },
+        --   },
+        -- },
+
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -708,6 +745,13 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'basedpyright',
+        'ruff',
+        'debugpy',
+        'taplo',
+        'helm-ls',
+        'jsonls',
+        -- 'python-lsp-server',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -761,7 +805,9 @@ require('lazy').setup({
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
+        -- python = { 'isort', 'black' },
+        python = { 'ruff_fix', 'ruff_organize_imports', 'ruff_format' },
+        -- python = { 'ruff_fix', 'ruff_lsp' },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
@@ -818,6 +864,7 @@ require('lazy').setup({
         -- you will need to read `:help ins-completion`
         --
         -- No, but seriously. Please read `:help ins-completion`, it is really good!
+
         --
         -- All presets have the following mappings:
         -- <tab>/<s-tab>: move to right/left of your snippet expansion
@@ -827,10 +874,41 @@ require('lazy').setup({
         -- <c-k>: Toggle signature help
         --
         -- See :h blink-cmp-config-keymap for defining your own keymap
+        -- Use the 'default' preset as a base
         preset = 'default',
 
-        -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
-        --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
+        -- Override specific keymaps
+        ['<C-j>'] = { 'select_next', 'fallback_to_mappings' },
+        ['<C-k>'] = { 'select_prev', 'fallback_to_mappings' },
+
+        ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
+        ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
+
+        ['<CR>'] = { 'select_and_accept' },
+
+        ['<C-Space>'] = { 'show', 'show_documentation', 'hide_documentation' },
+
+        -- Custom snippet navigation
+        -- ['<C-l>'] = {
+        --   function(cmp_instance)
+        --     if luasnip.expand_or_locally_jumpable() then
+        --       luasnip.expand_or_jump()
+        --       return true
+        --     end
+        --     return false
+        --   end,
+        --   'fallback',
+        -- },
+        -- ['<C-h>'] = {
+        --   function(cmp_instance)
+        --     if luasnip.locally_jumpable(-1) then
+        --       luasnip.jump(-1)
+        --       return true
+        --     end
+        --     return false
+        --   end,
+        --   'fallback',
+        -- },
       },
 
       appearance = {
@@ -936,7 +1014,25 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'python',
+        'comment',
+        'toml',
+        'rst',
+        'ninja',
+        'json',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -965,12 +1061,179 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+
+  {
+    'ray-x/lsp_signature.nvim',
+    event = 'VeryLazy',
+    opts = {},
+    config = function(_, opts)
+      require('lsp_signature').setup(opts)
+    end,
+  },
+
+  {
+    'kkoomen/vim-doge',
+    build = ':call doge#install()',
+
+    vim.keymap.set('n', '<leader>cD', ':DogeGenerate<CR>', { desc = 'Generate [D]ocstrings' }),
+  },
+
+  {
+    'ThePrimeagen/refactoring.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'folke/which-key.nvim', -- add which-key.nvim as a dependency
+    },
+    config = function()
+      require('refactoring').setup()
+
+      -- Keybindings
+      vim.keymap.set('x', '<leader>re', function()
+        require('refactoring').refactor 'Extract Function'
+      end, { desc = 'Extract Function' })
+      vim.keymap.set('x', '<leader>rf', function()
+        require('refactoring').refactor 'Extract Function To File'
+      end, { desc = 'Extract Function To File' })
+      vim.keymap.set('x', '<leader>rv', function()
+        require('refactoring').refactor 'Extract Variable'
+      end, { desc = 'Extract Variable' })
+      vim.keymap.set('n', '<leader>rI', function()
+        require('refactoring').refactor 'Inline Function'
+      end, { desc = 'Inline Function' })
+      vim.keymap.set({ 'n', 'x' }, '<leader>ri', function()
+        require('refactoring').refactor 'Inline Variable'
+      end, { desc = 'Inline Variable' })
+      vim.keymap.set('n', '<leader>rb', function()
+        require('refactoring').refactor 'Extract Block'
+      end, { desc = 'Extract Block' })
+      vim.keymap.set('n', '<leader>rbf', function()
+        require('refactoring').refactor 'Extract Block To File'
+      end, { desc = 'Extract Block To File' })
+
+      -- Register prefix and keybindings with descriptions
+    end,
+  },
+  -- Git Worktree Integration
+  {
+    'ThePrimeagen/git-worktree.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'nvim-telescope/telescope.nvim' },
+    config = function()
+      require('git-worktree').setup {
+        -- Change directory when switching worktrees
+        change_directory_command = 'cd',
+        -- Update the current buffer's path after switching worktrees
+        update_on_change = true,
+        -- Clear jumps, tabpages, etc. when switching worktrees
+        clearjumps_on_change = true,
+        -- Automatically create a worktree if it doesn't exist
+        autopush = false,
+      }
+
+      -- Load telescope extension
+      require('telescope').load_extension 'git_worktree'
+
+      -- Keymaps for git worktree
+      vim.keymap.set('n', '<leader>gw', function()
+        require('telescope').extensions.git_worktree.git_worktrees()
+      end, { desc = '[G]it [W]orktrees' })
+
+      vim.keymap.set('n', '<leader>gW', function()
+        require('telescope').extensions.git_worktree.create_git_worktree()
+      end, { desc = '[G]it Create [W]orktree' })
+    end,
+  },
+
+  -- Undotree (original mbbill version)
+  {
+    'mbbill/undotree',
+    config = function()
+      -- Set undotree window position and width
+      vim.g.undotree_WindowLayout = 2 -- window layout type
+      vim.g.undotree_SplitWidth = 30 -- window width
+      vim.g.undotree_DiffpanelHeight = 10 -- diff panel height
+      vim.g.undotree_SetFocusWhenToggle = 1 -- focus undotree when toggle
+
+      -- Keymap to toggle undotree
+      vim.keymap.set('n', '<leader>tu', '<cmd>UndotreeToggle<CR>', { desc = '[T]oggle [U]ndotree' })
+    end,
+  },
+
+  -- Harpoon 2
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+
+      -- REQUIRED
+      harpoon:setup()
+
+      -- Keymaps
+      vim.keymap.set('n', '<leader>ha', function()
+        harpoon:list():add()
+      end, { desc = '[H]arpoon [A]dd file' })
+
+      vim.keymap.set('n', '<leader>hl', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end, { desc = '[H]arpoon [L]ist' })
+
+      vim.keymap.set('n', '<leader>hp', function()
+        harpoon:list():prev()
+      end, { desc = '[H]arpoon [P]revious' })
+
+      vim.keymap.set('n', '<leader>hn', function()
+        harpoon:list():next()
+      end, { desc = '[H]arpoon [N]ext' })
+
+      -- Quick navigation to first 4 harpoon marks
+      vim.keymap.set('n', '<C-j>', function()
+        harpoon:list():select(1)
+      end, { desc = '[H]arpoon select 1' })
+      vim.keymap.set('n', '<C-k>', function()
+        harpoon:list():select(2)
+      end, { desc = '[H]arpoon select 2' })
+      vim.keymap.set('n', '<C-l>', function()
+        harpoon:list():select(3)
+      end, { desc = '[H]arpoon select 3' })
+      vim.keymap.set('n', '<C-ö>', function()
+        harpoon:list():select(4)
+      end, { desc = '[H]arpoon select 4' })
+    end,
+  },
+  {
+    'NeogitOrg/neogit',
+    dependencies = {
+      'nvim-lua/plenary.nvim', -- Required dependency
+      'sindrets/diffview.nvim', -- Optional: For enhanced diffing
+      'nvim-telescope/telescope.nvim', -- Optional: For fuzzy finding
+    },
+    config = function()
+      local neogit = require 'neogit'
+
+      neogit.setup {
+        -- Enable integration with Diffview
+        integrations = {
+          diffview = true,
+          telescope = true,
+        },
+        -- Optional: customize the kind of diff to show
+        kind = 'tab', -- or "tab", "split", "vsplit"
+      }
+
+      -- Set up the keybinding
+      vim.keymap.set('n', '<leader>gg', function()
+        neogit.open { kind = 'tab' }
+      end, { desc = 'Open Neogit with diffview' })
+    end,
+  },
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
