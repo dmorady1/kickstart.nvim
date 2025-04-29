@@ -553,7 +553,7 @@ require('lazy').setup({
           -- This may be unwanted, since they displace some of your code
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             -- Enable inlay hints by default
-            vim.lsp.inlay_hint.enable(event.buf, true)
+            vim.lsp.inlay_hint.enable(true)
 
             -- Also set up the toggle keybinding
             map('<leader>th', function()
