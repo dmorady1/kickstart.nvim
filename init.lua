@@ -173,6 +173,9 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
+  -- Helm filetype detection (needed for helm-ls)
+  { 'towolf/vim-helm' },
+
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -712,6 +715,34 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+        --
+        -- Configure helm_ls with settings
+        helm_ls = {
+          settings = {
+            ['helm-ls'] = {
+              -- Optional: Configure yaml-language-server integration
+              yamlls = {
+                -- Mason installs binaries to a standard path, so usually
+                -- you don't need to specify the path explicitly when
+                -- installed via Mason. Helm-ls should find it.
+                -- You might uncomment and adjust if needed:
+                -- path = "yaml-language-server",
+
+                -- Other yamlls settings from README if desired
+                -- enabled = true, -- It's true by default
+                config = {
+                  schemas = {
+                    kubernetes = 'templates/**',
+                  },
+                  -- Add other yaml-language-server settings here if needed
+                },
+              },
+              -- Optional: Add other helm-ls specific settings if needed
+              -- logLevel = "info",
+              -- valuesFiles = { mainValuesFile = "values.yaml" },
+            },
+          },
+        },
 
         lua_ls = {
           -- cmd = { ... },
@@ -752,6 +783,8 @@ require('lazy').setup({
         'helm-ls',
         'jsonls',
         -- 'python-lsp-server',
+        'yaml-language-server',
+        'markdownlint',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -884,7 +917,7 @@ require('lazy').setup({
         ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
         ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
 
-        ['<CR>'] = { 'select_and_accept' },
+        ['<C-y>'] = { 'select_and_accept' },
 
         ['<C-Space>'] = { 'show', 'show_documentation', 'hide_documentation' },
 
@@ -1032,6 +1065,8 @@ require('lazy').setup({
         'rst',
         'ninja',
         'json',
+        'yaml',
+        'helm',
       },
       -- Autoinstall languages that are not installed
       auto_install = true,
